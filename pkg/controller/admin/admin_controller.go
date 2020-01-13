@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"k8s.io/client-go/tools/record"
 
 	adminv1 "github.com/liqiangblogdemos/sample-controller/pkg/apis/admin/v1"
 	"github.com/liuliqiang/log4go"
@@ -32,7 +33,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileAdmin{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileAdmin{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		recorder:mgr.GetEventRecorderFor("admin-controller"),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -71,6 +76,7 @@ type ReconcileAdmin struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+	recorder record.EventRecorder
 }
 
 // Reconcile reads that state of the cluster for a Admin object and makes changes based on the state read
@@ -95,6 +101,7 @@ func (r *ReconcileAdmin) Reconcile(request reconcile.Request) (reconcile.Result,
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	r.recorder.Event(instance, "Normal", "reason", "message")
 	log4go.Info("admin: %s created or updated", instance.Spec.Username)
 	return reconcile.Result{}, nil
 }
